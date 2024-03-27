@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyhwk"
+description = "Homework assignment support library"
+readme = "README.md"
+authors = [
+  {name = "Spiros Papadimitriou", email="spapadim@gmail.com"},
+]
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+keywords = ["homework assignment", "unit testing", "autograding", "utilities"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Education",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Education",
+  "Topic :: Education :: Testing",
+  "Topic :: Software Development :: Testing",
+]
+dependencies = []  # Only optional dependencies
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "hwk.__version__"}
+
+[project.urls]
+Repository = "https://github.com/clusterhack/pyhwk"
+
+# [project.optional-dependencies]
+# jupyter = ["jupyter", "ipywidgets", "nbclient"]
+# pandas = ["pandas"]
+# matplotlib = ["matplotlib"]
+# sklearn = ["scikit-learn"]
+
+[project.scripts]
+hwk-test = "hwk.test.runner:main"
+

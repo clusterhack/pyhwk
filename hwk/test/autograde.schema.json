@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://clusterhack.net/json-schema/autograde.schema.json",
+
+  "title": "Autograde test runner output",
+
+  "type": "object",
+  "required": ["score", "max_score", "test_groups"],
+  "properties": {
+    "score": {
+      "type": "integer",
+      "description": "Actual total score of test run",
+      "minimum": 0
+    },
+    "max_score": {
+      "type": "integer",
+      "description": "Maximum possible total score",
+      "minimum": 0
+    },
+    "execution_time": {
+      "type": "number",
+      "description": "Test run wall clock time, in seconds",
+      "minimum": 0
+    },
+    "test_groups": {
+      "type": "array",
+      "description": "Test results organized in (single-level) groups",
+      "items": {
+        "$ref": "#/$defs/testgroup"
+      }
+    }
+  },
+
+  "$defs": {
+    "testgroup": {
+      "type": "object",
+      "description": "Group of tests; serves to organize results, as well as unit for subtractive scoring",
+      "required": ["name", "score", "max_score", "tests"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "An informative name for the test group"
+        },
+        "score": {
+          "type": "integer",
+          "description": "Actual total score for all tests under this group",
+          "minimum": 0
+        },
+        "max_score": {
+          "type": "integer",
+          "description": "Maximum possible score for all tests under this group; either derived from individual tests (for additive scoring) or must be explicitly specified via @max_score decorator (for subtractive scoring)",
+          "minimum": 0
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/test"
+          }
+        }
+      }
+    },
+
+    "test": {
+      "type": "object",
+      "required": ["name", "score", "max_score"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "An informative name for the test"
+        },
+        "score": {
+          "type": "number",
+          "description": "Actual score for test; can be negative if (and only if) group uses subtractive scoring [TODO: perhaps rename to points?]"
+        },
+        "max_score": {
+          "type": "number",
+          "description": "Points credited (positive) or subtracted (negative) for test, depending on outcome [TODO: perhaps rename to max_points?]"
+        },
+        "output": {
+          "type": "string",
+          "description": "Captured standard output and standard error (optional)"
+        }
+      }
+    }
+  }
+}
