@@ -71,16 +71,16 @@ def runNotebook(
     'get_ipython': __fake_get_ipython,  # So converted magics don't fail...
     'display': __fake_display,  # So display() doesn't fail...
   }
-  output, ns = runScriptFromString(pyscript, return_ns=True, ns_extra=ns_extra)
+  res = runScriptFromString(pyscript, return_ns=True, ns_extra=ns_extra)
 
   # Extract requested variable names from script namespace
   nbvars = NotebookNamespace()
   for varname in export_varnames:
-    if (not ignore_missing) and (varname not in ns):
+    if (not ignore_missing) and (varname not in res.ns):
       raise RuntimeError('Notebook did not create variable with name %s' % varname)
-    setattr(nbvars, varname, ns[varname])
+    setattr(nbvars, varname, res.ns[varname])
   if include_stdout:
-    setattr(nbvars, '__output__', output)
+    setattr(nbvars, '__output__', res.stdout)
 
   return nbvars
 

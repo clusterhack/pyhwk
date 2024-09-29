@@ -5,16 +5,17 @@
 # This software is distributed on an "AS IS" basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied.
 
+import builtins
 import sys
 import ast
 import imp
 import os.path
-from typing import Iterable
+from typing import Any, Iterable, NamedTuple
 
 from ..util.common import StringReadIO, StringWriteIO
 
 __all__ = [
-  'runScript', 'runScriptFromString',
+  'ScriptResult', 'runScript', 'runScriptFromString',
   'parseScript',
   'expand_path', 'expand_path_ext',
 ]
@@ -60,9 +61,20 @@ def expand_path_ext(filename: str, extensions: list[str]) -> str:
   return expand_path(filename)
 
 
+class ScriptResult(NamedTuple):
+  stdout: str
+  stderr: str | None = None
+  exit_code: int = 0
+  ns: dict[str, Any] | None = None
+  input_prompts: tuple[str] = ()
+
+  def __str__(self):
+    return self.stdout
+
+
 # http://stackoverflow.com/questions/5136611  (capture stdout)
 # http://stackoverflow.com/questions/11170949 (clone and patch module)
-def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> str:  # noqa: N802
+def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> ScriptResult:  # noqa: N802
   # type: (str, object, object) -> str
   """
   Runs a Python script, capturing standard output and, optionally,
@@ -76,9 +88,14 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> str:  # n
   :keyword mock_random:
   :keyword ns_extra:
   :keyword stdin:
+  :keyword return_ns: Default False.
+  :keyword capture_stderr: Default True
   """
+  # TODO? Add options to (a) not capture stderr?
   pathname = kwargs.get('pathname', '<input>')
-  save_stdin, save_stdout, save_argv = sys.stdin, sys.stdout, sys.argv
+  save_stdin, save_stdout, save_stderr = sys.stdin, sys.stdout, sys.stderr
+  save_argv = sys.argv
+  save_input = builtins.input
   # As of PyCharm 2017.1, the new test runners also capture sys.stdout
   # (to a StringIO instance), so
   #   sysmodule = imp.load_module('sys', *imp.find_module('sys'))
@@ -86,9 +103,24 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> str:  # n
   sysmodule = sys  # imp.load_module('sys', *imp.find_module('sys')) ##sys
   # TODO - See if we can turn off stdout capture in the test runner instead
   try:
+    exit_code = 0  # default
+    # Capture standard streams
     sysmodule.stdin = StringReadIO(kwargs.get('stdin', ''))
     sysmodule.stdout = StringWriteIO()
+    capture_stderr = kwargs.get('capture_stderr', True)
+    if capture_stderr:
+      sysmodule.stderr = StringWriteIO()
+    # Set sys.argv
     sysmodule.argv = [pathname] + list(args)
+    # Capture input() builtin prompts
+    input_prompts = []
+    def _input_thunk(prompt: str = '', /) -> str:
+      # We can safely assume we're not running on a tty (since we capture stdout...)
+      nonlocal input_prompts
+      if prompt:
+        input_prompts.append(prompt)
+      return save_input()
+    builtins.input = _input_thunk
     ns = {'__name__': '__main__', 'sys': sysmodule, }
     if 'seed' in kwargs:
       rndmodule = imp.load_module('random', *imp.find_module('random'))
@@ -111,22 +143,27 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> str:  # n
     try:
       exec(code, ns, ns)
     except SystemExit as ex:
-      pass  # Don't let sys.exit() terminate entire program (e.g., unit test)
-    output = sysmodule.stdout.getvalue()
-    if kwargs.get('return_ns', False):
-      return output, ns
-    else:
-      return output
+      # Don't let sys.exit() terminate entire program (e.g., unit test)
+      exit_code = ex.code
+    return ScriptResult(
+      stdout=sysmodule.stdout.getvalue(),
+      stderr=sysmodule.stderr.getvalue() if capture_stderr else None,
+      exit_code=exit_code,
+      ns=ns if kwargs.get('return_ns', False) else None,
+      input_prompts=tuple(input_prompts),
+    )
   finally:
     # For some reason, these need to be restored, even if sys
     # is not imported globally (unlike, e.g., the 'random' module seed)
-    sys.stdin, sys.stdout, sys.argv = save_stdin, save_stdout, save_argv
+    sys.stdin, sys.stdout, sys.stderr = save_stdin, save_stdout, save_stderr
+    sys.argv = save_argv
+    builtins.input = save_input
     del sysmodule, ns
     if 'seed' in kwargs:
       del rndmodule
 
 
-def runScript(filename: str, *args, **kwargs) -> str:  # noqa: N802
+def runScript(filename: str, *args, **kwargs) -> ScriptResult:  # noqa: N802
   """Runs a Python script, capturing standard output and, optionally,
   setting a random seed for the random library.
 
