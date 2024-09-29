@@ -8,7 +8,7 @@
 import builtins
 import sys
 import ast
-import imp
+import importlib
 import os.path
 from typing import Any, Iterable, NamedTuple
 
@@ -96,11 +96,7 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> ScriptRes
   save_stdin, save_stdout, save_stderr = sys.stdin, sys.stdout, sys.stderr
   save_argv = sys.argv
   save_input = builtins.input
-  # As of PyCharm 2017.1, the new test runners also capture sys.stdout
-  # (to a StringIO instance), so
-  #   sysmodule = imp.load_module('sys', *imp.find_module('sys'))
-  # has the effect of reloading sys and messing things up.
-  sysmodule = sys  # imp.load_module('sys', *imp.find_module('sys')) ##sys
+  sysmodule = sys  # import_lib.import_module('sys')
   # TODO - See if we can turn off stdout capture in the test runner instead
   try:
     exit_code = 0  # default
@@ -123,13 +119,13 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> ScriptRes
     builtins.input = _input_thunk
     ns = {'__name__': '__main__', 'sys': sysmodule, }
     if 'seed' in kwargs:
-      rndmodule = imp.load_module('random', *imp.find_module('random'))
+      rndmodule = importlib.import_module('random')  # TODO why not just "import random as rndmodule"
       rndmodule.seed(kwargs['seed'])
       ns['random'] = rndmodule
     if 'mock_random' in kwargs:
       assert 'seed' not in kwargs, "Cannot specify both seed and fakerandom"
       from . import mock_random
-      rndmodule = imp.load_module('random', *imp.find_module('random'))
+      rndmodule = importlib.import_module('random')  # TODO why not just "import random as rndmodule"
       mock_random.patch_random(
         rndmodule,
         mock_random.MockCircularRandom(
