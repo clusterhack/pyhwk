@@ -15,6 +15,7 @@ import sys
 import os
 from pathlib import Path
 import re
+from io import StringIO
 import contextlib
 import zipfile
 import subprocess
@@ -22,11 +23,32 @@ import json
 from urllib.parse import quote as urlescape  # Just for Linux (dbus-send arg)
 
 __all__ = [
+  'StringReadIO', 'StringWriteIO',
   'msg', 'hr', 'c', 'Color',
   'vscode_settings_dir', 'vscode_load_settings',
   'filename_escape', 'reveal_file', 'cwd',
   'zip_tree'
 ]
+
+class StringReadIO(StringIO): 
+  "Read-only StringIO"
+  def __init__(self, initial_value: str, newline: str | None = '\n'):
+    if initial_value is None:
+      raise ValueError('Use explicity empty string for empty buffer')
+    super().__init__(initial_value=initial_value, newline=newline)
+  def write(self, s: str, /) -> int:
+    raise IOError('Write operation not supported')
+  def writable(self) -> bool:
+    return False
+  
+class StringWriteIO(StringIO):
+  "Write-only StringIO"
+  def __init__(self, newline: str | None = '\n'):
+    super().__init__(initial_value=None, newline=newline)
+  def read(self, size: int = -1, /) -> str:
+    raise IOError('Read operation not supported')
+  def readable(self) -> bool:
+    return False
 
 
 def msg(s: str = '', file: TextIO = sys.stderr) -> None:
