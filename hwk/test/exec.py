@@ -108,7 +108,10 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> str:  # n
     if 'ns_extra' in kwargs:
       ns.update(kwargs['ns_extra'])
     code = compile(script, pathname, 'exec')
-    exec(code, ns, ns)
+    try:
+      exec(code, ns, ns)
+    except SystemExit as ex:
+      pass  # Don't let sys.exit() terminate entire program (e.g., unit test)
     output = sysmodule.stdout.getvalue()
     if kwargs.get('return_ns', False):
       return output, ns
