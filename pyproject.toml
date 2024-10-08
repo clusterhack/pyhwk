@@ -10,7 +10,7 @@ authors = [
   {name = "Spiros Papadimitriou", email="spapadim@gmail.com"},
 ]
 license = {file = "LICENSE"}
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 keywords = ["homework assignment", "unit testing", "autograding", "utilities"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
