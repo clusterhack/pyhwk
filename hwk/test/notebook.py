@@ -42,7 +42,7 @@ def __fake_display(*args, **kwargs):
   pass
 
 
-def _skip_cell(cell: "nbformat.NotebookNode") -> bool:
+def _skip_cell(cell: "nbformat.NotebookNode") -> bool:  # type: ignore
   return 'test:skip' in getattr(cell.metadata, 'tags', ())
 
 def runNotebook(
@@ -92,7 +92,8 @@ class HomeworkNotebookTestCase(HomeworkTestCase):
   __notebookname__: ClassVar[Optional[str]] = None
   __attrnames__: ClassVar[Optional[List[str]]] = None
 
-  nb: ClassVar[Dict[str,Any]]
+  nb: ClassVar[NotebookNamespace]
+  nb_exc: Exception | None
 
   @classmethod
   def setUpClass(cls):
