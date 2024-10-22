@@ -11,7 +11,7 @@ import unittest
 
 from .exec import runScript, runScriptFromString, parseScript, expand_path, expand_path_ext
 from contextlib import contextmanager
-from typing import Any, Optional, Union, Iterable, Sequence, ClassVar, List, Tuple, Dict
+from typing import overload, Any, ContextManager, Optional, Union, Iterable, Sequence, ClassVar, List, Dict
 import pickle
 
 import inspect
@@ -258,8 +258,13 @@ class HomeworkTestCase(unittest.TestCase):
     with mock_random.mock_random(values, normalize):
       yield
 
+  @overload
+  def assertUnmodified[T](self, arg: T, /, *, deep: bool = False) -> ContextManager[T]: ...
+  @overload
+  def assertUnmodified[*Ts](self, *args: *Ts, deep: bool = False) -> ContextManager[tuple[*Ts]]: ...
+  
   @contextmanager
-  def assertUnmodified(self, *args, deep=False):  # noqa: N802
+  def assertUnmodified(self, *args, deep = False):  # noqa: N802
     if not args:
       raise TypeError("assertUnmodified() requires at least one argument")
     import copy
