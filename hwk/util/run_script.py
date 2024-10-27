@@ -5,7 +5,7 @@
 # This software is distributed on an "AS IS" basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied.
 
-from typing import Optional, List
+from typing import Optional
 from types import TracebackType
 
 import sys
@@ -107,7 +107,7 @@ except ImportError:  # import readline
 def get_arguments(
   filename: str, ps1: str = _DEFAULT_PS1, ps0: Optional[str] = _DEFAULT_PS0,
   config: Optional[dict] = None,
-) -> List[str]:
+) -> list[str]:
   pathname = expand_path(filename)
   ps_vars = dict(
     scriptfile=os.path.basename(pathname),

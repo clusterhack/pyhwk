@@ -9,7 +9,7 @@
 Common auxiliary functions for all utility scripts.
 """
 
-from typing import Optional, Sequence, TextIO, Union, Literal
+from typing import Optional, Sequence, TextIO, Literal
 
 import sys
 import os
@@ -73,10 +73,10 @@ _COLORMAP = {
   'white': 7,
 }
 
-Color = Union[
-  Literal['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'],
+Color = (
+  Literal['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'] |
   Literal[0, 1, 2, 3, 4, 5, 6, 7]
-]
+)
 if sys.platform != "win32":
   def c(fg: Optional[Color] = None, bg: Optional[Color] = None) -> str:
     "Return ANSI color escape sequence for *nix terminals"
@@ -107,7 +107,7 @@ def vscode_settings_dir(workspace: Optional[os.PathLike] = None) -> str:
 
 def vscode_load_settings(
   filename: str = 'settings.json', workspace: Optional[os.PathLike] = None
-) -> Optional[Union[dict,list]]:
+) -> Optional[dict | list]:
   """Load a settings JSON file from the .vscode folder"""
   pathname = os.path.join(vscode_settings_dir(workspace), filename)
   if not os.path.exists(pathname):
@@ -124,7 +124,7 @@ def filename_escape(name: os.PathLike) -> str:
   return re.sub(r'[^\w\d]', '_', os.fspath(name))
 
 # Heavily modified from https://stackoverflow.com/a/50965628 (Windows-only)
-def reveal_file(filename: Union[str, os.PathLike]) -> None:
+def reveal_file(filename: str | os.PathLike) -> None:
   absfilename = os.path.abspath(filename)
   isdir = os.path.isdir(absfilename)
   if sys.platform == 'darwin':

@@ -7,7 +7,7 @@
 
 __all__ = ['score', 'max_score', 'sortby', 'visibility', 'tags']
 
-from typing import Callable, List, Literal, Type, TypeVar
+from typing import Callable, Literal, Type, TypeVar
 
 import inspect
 
@@ -47,7 +47,7 @@ def visibility(vis: Literal['hidden', 'visible']):
     return func
   return decorator
 
-def tags(*args: List[str]):
+def tags(*args: list[str]):
   def decorator(func: _Func) -> _Func:
     func.__tags__ = args
     return func

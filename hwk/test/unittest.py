@@ -11,7 +11,7 @@ import unittest
 
 from .exec import runScript, runScriptFromString, parseScript, expand_path, expand_path_ext
 from contextlib import contextmanager
-from typing import overload, Any, ContextManager, Optional, Union, Iterable, Sequence, ClassVar, List, Dict
+from typing import overload, Any, ContextManager, Optional, Iterable, Sequence, ClassVar
 import pickle
 
 import inspect
@@ -40,10 +40,10 @@ __all__ = ["HomeworkTestCase", "try_import", "HomeworkModuleTestCase"]
 # level and the globals of the caller will be used.
 def try_import(
   moduleName: str,
-  names: Optional[Union[str, List[str]]] = None,
+  names: Optional[str | list[str]] = None,
   *,
   excname: Optional[str] = None,
-  nsdict: Optional[Dict[str,Any]] = None,
+  nsdict: Optional[dict[str, Any]] = None,
 ) -> None:
   caller_frameinfo = None
   try:
@@ -281,7 +281,7 @@ class HomeworkTestCase(unittest.TestCase):
       )
 
   @contextmanager
-  def assertAccesses(self, ref: Any, module_names: Optional[List] = None, msg: Optional[str] = None):  # noqa: N802
+  def assertAccesses(self, ref: Any, module_names: Optional[list] = None, msg: Optional[str] = None):  # noqa: N802
     """Deletes all module-level names that reference given object, and
     expects a failure with either NameError or AttributeError"""
     # Delete all module-level references
@@ -387,9 +387,9 @@ class HomeworkModuleTestCase(HomeworkTestCase):
   while providing some useful error messages
   """
   __modulename__: ClassVar[Optional[str]] = None   # Modulename of solution script
-  __attrnames__: ClassVar[Optional[List[str]]] = None  # Attributes of solution module to import directly (instead of module)
+  __attrnames__: ClassVar[Optional[list[str]]] = None  # Attributes of solution module to import directly (instead of module)
 
-  imports: ClassVar[Dict[str,Any]]
+  imports: ClassVar[dict[str, Any]]
 
   @classmethod
   def setUpClass(cls):

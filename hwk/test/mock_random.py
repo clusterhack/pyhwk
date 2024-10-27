@@ -8,6 +8,9 @@
 import random
 from contextlib import contextmanager
 
+from typing import Optional
+from types import ModuleType
+
 
 class MockCircularRandom(random.Random):
   FAKE_VERSION = 1000
@@ -16,7 +19,7 @@ class MockCircularRandom(random.Random):
   def __new__(cls, *args, **kwargs):
     return super(MockCircularRandom, cls).__new__(cls, None)
 
-  def __init__(self, values, normalize=None):
+  def __init__(self, values: list[float], normalize: Optional[float] = None):
     assert len(values) > 0
     if normalize is not None:
       values = [float(v)/normalize for v in values]
@@ -24,7 +27,7 @@ class MockCircularRandom(random.Random):
     self.values = values
     self.pos = 0  # position of next value to be returned
 
-  def random(self):
+  def random(self) -> float:
     val = self.values[self.pos]
     self.pos = (self.pos + 1) % len(self.values)
     return val
@@ -32,20 +35,20 @@ class MockCircularRandom(random.Random):
   def seed(self, a=None):
     self.pos = 0  # always reset
 
-  def getstate(self):
+  def getstate(self) -> tuple[int, int, int]:
     return self.FAKE_VERSION, len(self.values), self.pos
 
-  def setstate(self, state):
+  def setstate(self, state: tuple[int, int, int]):
     version, n, pos = state
     assert version == self.FAKE_VERSION
     assert n == len(self.values)
     self.pos = pos
 
-  def jumpahead(self, n):
+  def jumpahead(self, n: int):
     self.pos = (self.pos + n) % len(self.values)
 
 
-def patch_random(rndmodule, instance):
+def patch_random(rndmodule: ModuleType, instance: random.Random):
   """Modifies the module-global instance of the random number generator in the
   given loaded instance of Python's random."""
   rndmodule._inst = instance
@@ -74,7 +77,7 @@ def patch_random(rndmodule, instance):
 
 
 @contextmanager
-def mock_random(values, normalize=None):
+def mock_random(values: list[float], normalize: Optional[float] = None):
   import random
   saved_inst = random._inst
   mock_inst = MockCircularRandom(values, normalize)

@@ -11,7 +11,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 
-from typing import Any, Callable, Dict, List, Optional, TextIO, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Optional, TextIO, Type, TypeVar
 from types import TracebackType
 
 try:
@@ -49,7 +49,7 @@ class AutogradeTest:
   def is_subtractive(self) -> bool:
     return self.max_score < 0
 
-  def to_dict(self) -> Dict[str, Any]:
+  def to_dict(self) -> dict[str, Any]:
     return {
       'name': self.name,
       'score': self.score,
@@ -64,7 +64,7 @@ class AutogradeTestGroup:
   _max_score: Optional[int] = None  # Explicitly specified (via @max_score decorator)
   # XXX Ideally, constructor arg name for _max_score should be max_score ...
 
-  tests: List[AutogradeTest] = field(default_factory=list, init=False)
+  tests: list[AutogradeTest] = field(default_factory=list, init=False)
   
   _total_score: int = field(default=0, init=False)  # Sum of score over all tests (note: could be negative)
   _total_max_score: int = field(default=0, init=False)  # Sum of max_score over all tests
@@ -100,7 +100,7 @@ class AutogradeTestGroup:
     self._total_max_score += test.max_score
     self.tests.append(test)
 
-  def to_dict(self) -> Dict[str, Any]:
+  def to_dict(self) -> dict[str, Any]:
     return {
       'name': self.name,
       'score': self.score,
@@ -112,7 +112,7 @@ class AutogradeTestGroup:
 @dataclass
 class AutogradeResults:
   execution_time: Optional[int] = field(default=None, init=False)  # In seconds
-  test_groups: Dict[str,AutogradeTestGroup] = field(default_factory=dict, init=False)  # Key should be group.name
+  test_groups: dict[str, AutogradeTestGroup] = field(default_factory=dict, init=False)  # Key should be group.name
 
   @property
   def score(self) -> int:
@@ -151,7 +151,7 @@ class AutogradeResults:
   #     raise KeyError(f'Test group {group_name} does not exist')
   #   self.test_groups[group_name].add_test(test)
 
-  def to_dict(self) -> Dict[str, Any]:
+  def to_dict(self) -> dict[str, Any]:
     return {
       'score': self.score,
       'max_score': self.max_score,
@@ -164,9 +164,9 @@ class AutogradeResults:
 # Unit test runner
 
 # Copied from typeshed definitions for unittest.result
-SysExcInfoType = Union[Tuple[Type[BaseException], BaseException, TracebackType], Tuple[None, None, None]]
+SysExcInfoType = tuple[Type[BaseException], BaseException, TracebackType] | tuple[None, None, None]
 
-# def _parseErrorHolderId(id: str) -> Optional[Tuple[str, str]]:
+# def _parseErrorHolderId(id: str) -> Optional[tuple[str, str]]:
 #   "Returns a (className, methodName) tuple, or None if id can't be parsed"
 #   m = re.fullmatch(r'(?P<methodName>\w+)?\s+\((?:\w*\.)*(?P<className>\w+)\)', id)
 #   if m is None:
@@ -213,14 +213,14 @@ class AutogradeTestSuite(TestSuite):
 
 defaultTestLoader.suiteClass = AutogradeTestSuite
 
-def _getTestGroupInfo(test: TestCase) -> Tuple[str,Optional[int]]:
+def _getTestGroupInfo(test: TestCase) -> tuple[str, Optional[int]]:
   test = getattr(test, '_realTest', test)  # XXX Using kludge here
   assert isinstance(test, TestCase)  # XXX Partial safeguard for kludge
   group_name = test.__class__.__name__  # TODO? Should be unqualified; verify?
   group_max_score = getattr(test, '__max_score__', None)
   return group_name, group_max_score
 
-def _getTestInfo(test: TestCase) -> Tuple[str,int]:
+def _getTestInfo(test: TestCase) -> tuple[str, int]:
   test = getattr(test, '_realTest', test)  # XXX Using kludge here
   assert isinstance(test, TestCase)  # XXX Partial safeguard for kludge
   test_name = getattr(test, '_testMethodName', None)
@@ -339,7 +339,7 @@ class AutogradeTestRunner(TextTestRunner):
     self._autograde_stream = autograde_stream
 
   @override
-  def run(self, test: Union[TestCase, TestSuite]) -> AutogradeTestResult:
+  def run(self, test: TestCase | TestSuite) -> AutogradeTestResult:
     start_time = time.perf_counter()
     result: AutogradeTestResult = super().run(test)
     result.autograde.execution_time = time.perf_counter() - start_time

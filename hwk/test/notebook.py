@@ -5,7 +5,7 @@
 # This software is distributed on an "AS IS" basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied.
 
-from typing import ClassVar, Optional, Any, Sequence, List, Dict
+from typing import ClassVar, Optional, Any, Sequence
 import unittest
 
 from types import SimpleNamespace
@@ -90,7 +90,7 @@ class HomeworkNotebookTestCase(HomeworkTestCase):
   TestCase subclass to help partially automate testing of Jupyter notebooks.
   """
   __notebookname__: ClassVar[Optional[str]] = None
-  __attrnames__: ClassVar[Optional[List[str]]] = None
+  __attrnames__: ClassVar[Optional[list[str]]] = None
 
   nb: ClassVar[NotebookNamespace]
   nb_exc: Exception | None
