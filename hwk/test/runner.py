@@ -11,16 +11,10 @@ import sys
 import time
 from dataclasses import dataclass, field
 
-from typing import Any, Callable, Optional, TextIO, Type, TypeVar
+from typing import Any, Optional, TextIO, Type
 from types import TracebackType
 
-try:
-  from typing import override  # Coming in Python 3.12
-except ImportError:
-  # Define as noop, to hush errors
-  _Func = TypeVar('_Func', bound=Callable)
-  def override(method: _Func) -> _Func:
-    return method
+from typing import override
 
 from unittest import (
   SkipTest, TestCase, TestResult, TestSuite, TextTestResult, TextTestRunner,
