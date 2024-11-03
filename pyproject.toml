@@ -30,7 +30,8 @@ version = {attr = "hwk.__version__"}
 [project.urls]
 Repository = "https://github.com/clusterhack/pyhwk"
 
-# [project.optional-dependencies]
+[project.optional-dependencies]
+snoop = ["snoop >= 0.6.0", "prettyprinter"]
 # jupyter = ["jupyter", "ipywidgets", "nbclient"]
 # pandas = ["pandas"]
 # matplotlib = ["matplotlib"]

@@ -9,13 +9,21 @@ import os
 import sys
 import unittest
 
-from .exec import runScript, runScriptFromString, parseScript, expand_path, expand_path_ext
 from contextlib import contextmanager
-from typing import overload, Any, ContextManager, Optional, Iterable, Sequence, ClassVar
-import pickle
-
 import inspect
 import importlib
+import pickle
+
+from types import TracebackType
+from typing import overload, override, Any, ClassVar, ContextManager, Optional, Iterable, Sequence, Type
+
+from .exec import runScript, runScriptFromString, parseScript, expand_path_ext
+try:
+  from .trace import TraceLog
+except ImportError:  # snoop is an optional dependency
+  TraceLog = None
+
+
 
 __all__ = ["HomeworkTestCase", "try_import", "HomeworkModuleTestCase"]
 
@@ -403,7 +411,14 @@ class HomeworkModuleTestCase(HomeworkTestCase):
         cls.__modulename__, 
         cls.__attrnames__, 
         excname=f"{cls.__modulename__}_exc", 
-        nsdict=cls.imports)
+        nsdict=cls.imports
+      )
+      # Wrap all imported functions for execution tracing
+      if TraceLog is not None:  # snoop is an optional dependency
+        cls.tracelog = TraceLog()
+        for name, attr in cls.imports.items():
+          if inspect.isfunction(attr) or inspect.isclass(attr):
+            cls.imports[name] = cls.tracelog(attr)
       # Also add imported names to the module defining the testcase class
       # so they can be called more conveniently by the test methods
       sys.modules[cls.__module__].__dict__.update(cls.imports)
@@ -432,3 +447,38 @@ class HomeworkModuleTestCase(HomeworkTestCase):
   def setUp(self):
     self.__check_import()
     self.__check_is_library()
+
+  @override
+  def run(self, result: Optional[unittest.TestResult] = None):
+    result = super().run(result=result)
+    if getattr(self, 'tracelog', None) is not None:
+      self.tracelog.reset()
+    return result
+
+type ExceptionInfo = tuple[Type[BaseException], BaseException, TracebackType] | tuple[None, None, None]
+
+# Monkey-patch TestResult, to add execution trace (if available) as a note on error or failure exceptions
+# Since VSCode uses it's own TestRunner and TestResult sub-classes (in private Python modules), we
+# cannot do this "properly" in a TestResult subclass.  Also, we cannot override TestCase.run for this
+# either, since before super().run the result isn't available and after super().run it's too late
+# (since VSCode sends out IPC messages as the result is updated during test execution, and not once
+# in batch at the end of testing).
+# At least this works (and allows VSCode UI to properly show the trace everywhere), even if it is
+# quite kludgy...
+def __patch_TestResult():
+  # TODO? Enforce this function is called only once
+  TestResult_addError = unittest.TestResult.addError
+  TestResult_addFailure = unittest.TestResult.addFailure
+  def addError(self: unittest.TestResult, test: unittest.TestCase, err: ExceptionInfo):
+    exc = err[1]
+    if exc is not None and getattr(test, 'tracelog', None) is not None:
+      exc.add_note(test.tracelog.get_output(header=True))
+    TestResult_addError(self, test, err)
+  def addFailure(self: unittest.TestResult, test: unittest.TestCase, err: ExceptionInfo):
+    exc = err[1]
+    if exc is not None and getattr(test, 'tracelog', None) is not None:
+      exc.add_note(test.tracelog.get_output(header=True))
+    TestResult_addFailure(self, test, err)
+  unittest.TestResult.addError = addError
+  unittest.TestResult.addFailure = addFailure
+__patch_TestResult()
