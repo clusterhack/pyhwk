@@ -134,8 +134,8 @@ class HomeworkTestCase(unittest.TestCase):
     if first.shape != second.shape:
       raise self.failureException(
         'shapes %r and %r cannot be compared' % (first.shape, second.shape))
-    if (np.issubdtype(first.dtype, np.float_) or
-      np.issubdtype(second.dtype, np.float_)
+    if (np.issubdtype(first.dtype, np.float64) or
+      np.issubdtype(second.dtype, np.float64)
     ):
       fail_cond = np.round(np.abs(first-second), places) != 0
     else:
