@@ -39,4 +39,5 @@ snoop = ["snoop >= 0.6.0", "prettyprinter"]
 
 [project.scripts]
 hwk-test = "hwk.test.runner:main"
+pytrace = "hwk.util.pytrace:main"
 

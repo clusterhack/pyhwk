@@ -2,20 +2,10 @@
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
 
+  "git.openRepositoryInParentFolders": "never",
+
   "python.languageServer": "Pylance",
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.linting.pylintArgs": [
-    // Arguments based on deprecated 'pylintUseMinimalCheckers' option;
-    // see https://github.com/microsoft/vscode-python/commit/e8b109c2f21e56128620abd881e04fded9b7fd76
-    "--disable=all",
-    "--enable=F,E,unreachable,duplicate-key,unnecessary-semicolon,global-variable-not-assigned,unused-variable,unused-wildcard-import,binary-op-exception,bad-format-string,anomalous-backslash-in-string,bad-open-mode"
-  ],
-  "python.linting.flake8Enabled": false,
-  "python.linting.flake8Args": [ 
-    "--extend-ignore=E111,E114", 
-    "--max-line-length=120" 
-  ],
+  "python.analysis.typeCheckingMode": "off",
 
   "python.testing.unittestEnabled": true,
   "python.testing.unittestArgs": [
@@ -25,6 +15,19 @@
     "-p", "test_*.py"
   ],
   "python.testing.pytestEnabled": false,
+
+  "pylint.enabled": false,
+  "pylint.args": [
+    // Arguments based on deprecated 'pylintUseMinimalCheckers' option;
+    // see https://github.com/microsoft/vscode-python/commit/e8b109c2f21e56128620abd881e04fded9b7fd76
+    "--disable=all",
+    "--enable=F,E,unreachable,duplicate-key,unnecessary-semicolon,global-variable-not-assigned,unused-variable,unused-wildcard-import,binary-op-exception,bad-format-string,anomalous-backslash-in-string,bad-open-mode"
+  ],
+  "flake8.enabled": false,
+  "flake8.args": [ 
+    "--extend-ignore=E111,E114", 
+    "--max-line-length=120" 
+  ],
 
   "markdownlint.config": {
     "MD033": false,  // no-inline-html

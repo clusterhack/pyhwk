@@ -9,7 +9,7 @@
 Common auxiliary functions for all utility scripts.
 """
 
-from typing import Optional, Sequence, TextIO, Literal
+from typing import Any, Optional, Sequence, TextIO, Literal, NoReturn
 
 import sys
 import os
@@ -24,10 +24,11 @@ from urllib.parse import quote as urlescape  # Just for Linux (dbus-send arg)
 
 __all__ = [
   'StringReadIO', 'StringWriteIO',
-  'msg', 'hr', 'c', 'Color',
+  'printerr', 'die', 'msg', 'hr', 'c', 'Color',
   'vscode_settings_dir', 'vscode_load_settings',
   'filename_escape', 'reveal_file', 'cwd',
-  'zip_tree'
+  'zip_tree',
+  'setattrdefault',
 ]
 
 class StringReadIO(StringIO): 
@@ -50,6 +51,24 @@ class StringWriteIO(StringIO):
   def readable(self) -> bool:
     return False
 
+def printerr(*args, **kwargs) -> None:
+  """
+  Shorthand for `print()` but with `file=sys.stderr` as default (instead of `sys.stdout`.
+  """
+  kwargs.setdefault('file', sys.stderr)
+  print(*args, **kwargs)
+
+def die(*args, **kwargs) -> NoReturn:
+  """
+  Print message and exit.
+
+  The exit code will be set to the `status=` kwarg value, or `1` if not specified.
+  Also, if the `file=` kwarg is missing, it will be set to `sys.stderr`.
+  All other arguments are passed on to the `print()` builtin.
+  """
+  status = kwargs.pop('status', 1)
+  printerr(*args, **kwargs)
+  sys.exit(status)
 
 def msg(s: str = '', file: TextIO = sys.stderr) -> None:
   "Simple alias for print() builtin, to allow future customization."
@@ -224,5 +243,14 @@ def zip_tree(
       msg(f" \u2717 {fn}")
   
             
-
-
+def setattrdefault(obj: object, name: str, default: Any) -> Any:
+  """
+  Similar to dict.setdefault, except for object attributes.
+  Specifically, if obj.name already exists then returns it's value.
+  Otherwise, it sets obj.name to default and returns default.
+  """
+  try:
+    return getattr(obj, name)
+  except AttributeError:
+    setattr(obj, name, default)
+    return default
