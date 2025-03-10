@@ -157,10 +157,14 @@ def run_script(filename: str, config: Optional[dict] = None) -> None:
     return
   except EOFError:
     return
+  exit_code = 0
   try:
-    print(runScript(filename, *args), end='')
+    res = runScript(filename, *args, capture_stdio=False, capture_stderr=False, capture_input=False)
+    exit_code = res.exit_code
   except:
     print_traceback()
+    exit_code = 1
+  sys.exit(exit_code)
 
 
 def main() -> None:

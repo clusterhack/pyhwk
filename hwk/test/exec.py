@@ -93,21 +93,23 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> ScriptRes
   """
   # TODO? Add options to (a) not capture stderr?
   pathname = kwargs.get('pathname', '<input>')
-  save_stdin, save_stdout, save_stderr = sys.stdin, sys.stdout, sys.stderr
   save_argv = sys.argv
+  save_stdin, save_stdout, save_stderr = sys.stdin, sys.stdout, sys.stderr
   save_input = builtins.input
   sysmodule = sys  # import_lib.import_module('sys')
   # TODO - See if we can turn off stdout capture in the test runner instead
   try:
     exit_code = 0  # default
+    # Set sys.argv
+    sysmodule.argv = [pathname] + list(args)
     # Capture standard streams
-    sysmodule.stdin = StringReadIO(kwargs.get('stdin', ''))
-    sysmodule.stdout = StringWriteIO()
+    capture_stdio = kwargs.get('capture_stdio', True)
+    if capture_stdio:
+      sysmodule.stdin = StringReadIO(kwargs.get('stdin', ''))
+      sysmodule.stdout = StringWriteIO()
     capture_stderr = kwargs.get('capture_stderr', True)
     if capture_stderr:
       sysmodule.stderr = StringWriteIO()
-    # Set sys.argv
-    sysmodule.argv = [pathname] + list(args)
     # Capture input() builtin prompts
     input_prompts = []
     def _input_thunk(prompt: str = '', /) -> str:
@@ -116,7 +118,9 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> ScriptRes
       if prompt:
         input_prompts.append(prompt)
       return save_input()
-    builtins.input = _input_thunk
+    capture_input = kwargs.get('capture_input', True)
+    if capture_input:
+      builtins.input = _input_thunk
     ns = {'__name__': '__main__', 'sys': sysmodule, }
     if 'seed' in kwargs:
       rndmodule = importlib.import_module('random')  # TODO why not just "import random as rndmodule"
@@ -142,11 +146,11 @@ def runScriptFromString(script: str, args: Iterable = (), **kwargs) -> ScriptRes
       # Don't let sys.exit() terminate entire program (e.g., unit test)
       exit_code = ex.code
     return ScriptResult(
-      stdout=sysmodule.stdout.getvalue(),
+      stdout=sysmodule.stdout.getvalue() if capture_stdio else None,
       stderr=sysmodule.stderr.getvalue() if capture_stderr else None,
       exit_code=exit_code,
       ns=ns if kwargs.get('return_ns', False) else None,
-      input_prompts=tuple(input_prompts),
+      input_prompts=tuple(input_prompts) if capture_input else None,
     )
   finally:
     # For some reason, these need to be restored, even if sys
