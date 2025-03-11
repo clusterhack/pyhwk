@@ -26,7 +26,7 @@ from .common import msg, vscode_load_settings, c, Color
 #  pythonexec: Full pathname of python interpreter executable
 #  cwd: current working directory
 #  shellps: shell prompt (simulated)
-_DEFAULT_PS0 = "Please fill in (or modify) command-line argument values:\n"
+_DEFAULT_PS0 = f"{c(1)}Enter command-line arguments, then press <ENTER> to run{c()}\n\n"
 _DEFAULT_PS1 = f"{c(2)}{{shellps}}{c()} python {{scriptfile}} "
 
 
@@ -37,6 +37,7 @@ def print_warning(message: str, *, title: str = 'WARNING', color: Color = 3) -> 
   msg(f'{c(color)}│ {message[:68]: ^68s} │{c()}')
   msg(f'{c(color)}└──────────────────────────────────────────────────────────────────────┘{c()}')
   msg()
+  
 
 try:
   import readline
@@ -174,7 +175,7 @@ def main() -> None:
     print_warning('Unit tests cannot be executed via "Run in Terminal"', title='ERROR', color=1)
     sys.exit(1)
 
-  print_warning('Using the "Run Python File in Terminal" button is *not* recommended!')
+  print_warning('Using the ▷ (Run Python File) button is *not* recommended!')
   config = vscode_load_settings('runscript.json')
   if config is not None:
     config = config.get(os.path.basename(filename), None)
