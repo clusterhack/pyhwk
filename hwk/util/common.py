@@ -23,6 +23,7 @@ import json
 from urllib.parse import quote as urlescape  # Just for Linux (dbus-send arg)
 
 __all__ = [
+  'strfind_nth', 'rstrfind_nth', 'limit_lines',
   'StringReadIO', 'StringWriteIO',
   'printerr', 'die', 'msg', 'hr', 'c', 'Color',
   'vscode_settings_dir', 'vscode_load_settings',
@@ -30,6 +31,78 @@ __all__ = [
   'zip_tree',
   'setattrdefault',
 ]
+
+def strfind_nth(str: str, sub: str, n: int = 1):
+  if n <= 0:
+    raise ValueError('n must be positive')
+  start = 0
+  sublen = len(sub)
+  for _ in range(n):
+    idx = str.find(sub, start)
+    if idx < 0:
+      return -1
+    start = idx + sublen
+  return idx
+
+def rstrfind_nth(str: str, sub: str, n: int = 1):
+  if n <= 0:
+    raise ValueError('n must be positive')
+  end = len(str)
+  for _ in range(n):
+    idx = str.rfind(sub, 0, end)
+    if idx < 0:
+      return -1
+    end = idx
+  return idx
+
+_NEWLINE = '\n'  # Assumes UNIX newline convention (we don't support other platforms)  
+
+# TODO? Also add max line length limit?
+def limit_lines(
+  txt: str, max_lines: int,
+  *,
+  head: float | int = 0.5,
+  truncation_msg: str = '  [... {} lines skipped ...]', 
+) -> str:
+  """Truncate txt so it's it has at most max_lines from the original.  
+  If the number of lines is larger, then the necessary number of lines after the head
+  are replaced with truncation_msg (so the returned value actually has max_lines + 1 lines).
+
+  Assumes UNIX newline conventions (we do not support other platforms).
+  
+  Args:
+      txt (str): String to truncate
+      max_lines (int): Maximum number of text lines to retain from original string
+      head (float | int, optional): How many initial lines to keep. Can be either an actual
+        number of lines (int) or a fraction of max_lines (float between 0.0 and 1.0, inclusive).
+        Defaults to 0.5 (50% of max_lines).
+      truncation_msg (str, optional): Message to replace removed text lines with. Can contain {},
+        which will be replaced with the number of removed lines (via str.format()).
+        Defaults to '  [... {} lines skipped ...]'.
+
+  Raises:
+      ValueError: If max_lines is negative or zero, or if head is a float outside the 0.0..1.0 range.
+
+  Returns:
+      str: The truncated text. Note that, if truncation occurs, the actual number of lines
+        will be max_lines + 1 (including the truncation message line)
+  """
+  if max_lines <= 0:
+    raise ValueError('max_lines must be at least 1')
+  if isinstance(head, float):
+    if not 0.0 <= head <= 1.0:
+      raise ValueError('head must be either an integer or between 0.0 and 1.0')
+    head = int(max_lines * head)
+
+  no_trailing_newline = not txt.endswith(_NEWLINE)  # Trying to minimize new str instances created...
+  num_lines = txt.count(_NEWLINE) + no_trailing_newline
+  if num_lines <= max_lines:
+    return txt
+  
+  head_txt = txt[:strfind_nth(txt, _NEWLINE, head)]
+  tail_txt = txt[rstrfind_nth(txt, _NEWLINE, max_lines - head + no_trailing_newline)+1:]
+  return f'{head_txt}\n{truncation_msg.format(num_lines-max_lines)}\n{tail_txt}'
+
 
 class StringReadIO(StringIO): 
   "Read-only StringIO"

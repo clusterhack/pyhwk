@@ -15,6 +15,7 @@ from snoop import Config as SnoopConfig
 from types import FunctionType
 from typing import overload, Callable, Optional, Sequence, Type
 
+from ..util.common import limit_lines
 
 __all__ = ['strip_ansi_escapes', 'TraceLog']
 
@@ -26,14 +27,22 @@ def strip_ansi_escapes(txt: str) -> str:
 
 # Define these here (just need basic colors, no need for additional dependencies)
 _ANSI_RESET = '\033[0m'
+_ANSI_RED = '\033[0;31m'
 _ANSI_CYAN = '\033[0;36m'
 
 
 class TraceLog:
-  def __init__(self, *, prefix: str = f'{_ANSI_CYAN}┃{_ANSI_RESET}', default_depth: int = 1):
+  def __init__(
+    self,
+    *,
+    prefix: str = f'{_ANSI_CYAN}┃{_ANSI_RESET}',
+    default_depth: int = 1,
+    max_lines: Optional[int] = 500,
+  ):
     self._out = StringIO()
     self._config = SnoopConfig(out=self._out, prefix=prefix, columns='', color=True, replace_watch_extras=())
     self.default_depth = default_depth
+    self.max_lines = max_lines
 
   def reset(self):
     self._out.seek(0)
@@ -41,6 +50,11 @@ class TraceLog:
 
   def get_output(self, *, color: bool = True, header: bool = True) -> str:
     out = self._out.getvalue()
+    if self.max_lines:
+      out = limit_lines(
+        out, self.max_lines,
+        truncation_msg=f'{_ANSI_CYAN}┇ \n┇{_ANSI_RESET}  {_ANSI_RED}...  ⟨ {{}} lines ommitted ⟩  ...{_ANSI_RESET}\n{_ANSI_CYAN}┇ {_ANSI_RESET}',
+      )
     if header:
       out = (
         f'{_ANSI_CYAN}┎──────────────────────────── EXECUTION TRACE ────────────────────────────{_ANSI_RESET}\n' +
